@@ -15,9 +15,7 @@
 ### 1. Регистрация пользователя
 
 ```bash
-curl -X POST -H "Content-Type: application/json" \
-     -d '{"username":"user1","password":"password123"}' \
-     http://localhost:8080/api/users/register
+curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"user1\",\"password\":\"password123\"}" http://localhost:8080/api/users/register
 ```
 
 ### 2. Авторизация (логин) пользователя
@@ -29,9 +27,7 @@ curl -X GET "http://localhost:8080/api/users/login?username=user1&password=passw
 ### 3. Создание задачи
 
 ```bash
-curl -X POST -H "Content-Type: application/json" \
-     -d '{"title":"Тестовая задача","description":"Описание тестовой задачи","targetDate":"2024-12-31T12:00:00","userId":"ПОЛУЧЕННЫЙ_UUID_ПОЛЬЗОВАТЕЛЯ"}' \
-     http://localhost:8080/api/tasks
+curl -X POST -H "Content-Type: application/json" -d "{\"title\":\"Тестовая задача\",\"description\":\"Описание тестовой задачи\",\"targetDate\":\"2024-12-31T12:00:00\",\"userId\":\"ПОЛУЧЕННЫЙ_UUID_ПОЛЬЗОВАТЕЛЯ\"}" http://localhost:8080/api/tasks
 ```
 
 ### 4. Получение всех задач пользователя
