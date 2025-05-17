@@ -3,35 +3,25 @@ package com.example.task_manager.service;
 import com.example.task_manager.model.Notification;
 import com.example.task_manager.model.Task;
 import com.example.task_manager.repository.TaskRepository;
+import com.example.task_manager.repository.impl.InMemoryNotificationRepository;
+import com.example.task_manager.repository.impl.InMemoryTaskRepository;
+import com.example.task_manager.service.impl.NotificationServiceImpl;
 import com.example.task_manager.service.impl.TaskServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
 
-    @Mock
     private TaskRepository taskRepository;
-
-    @Mock
     private NotificationService notificationService;
-
-    @InjectMocks
-    private TaskServiceImpl taskService;
+    private TaskService taskService;
 
     private Task testTask;
     private UUID taskId;
@@ -39,6 +29,12 @@ class TaskServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Создаем репозитории и сервисы
+        taskRepository = new InMemoryTaskRepository();
+        var notificationRepository = new InMemoryNotificationRepository();
+        notificationService = new NotificationServiceImpl(notificationRepository);
+        taskService = new TaskServiceImpl(taskRepository, notificationService);
+        
         taskId = UUID.randomUUID();
         userId = UUID.randomUUID();
         testTask = new Task("Test Task", "Test Description", LocalDateTime.now().plusDays(1), userId);
@@ -47,10 +43,6 @@ class TaskServiceTest {
 
     @Test
     void createTask_ShouldSaveTaskAndCreateNotification() {
-        // Arrange
-        when(taskRepository.save(any(Task.class))).thenReturn(testTask);
-        when(notificationService.createNotification(any(Notification.class))).thenReturn(new Notification());
-
         // Act
         Task result = taskService.createTask(testTask);
 
@@ -58,8 +50,16 @@ class TaskServiceTest {
         assertNotNull(result);
         assertEquals(testTask.getTitle(), result.getTitle());
         assertEquals(testTask.getUserId(), result.getUserId());
-        verify(taskRepository, times(1)).save(any(Task.class));
-        verify(notificationService, times(1)).createNotification(any(Notification.class));
+        
+        // Проверяем, что задача сохранена в репозитории
+        Optional<Task> savedTask = taskRepository.findById(result.getId());
+        assertTrue(savedTask.isPresent());
+        assertEquals(testTask.getTitle(), savedTask.get().getTitle());
+        
+        // Проверяем, что уведомление создано
+        List<Notification> notifications = notificationService.findAllByUserId(userId);
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).getMessage().contains(testTask.getTitle()));
     }
 
     @Test
@@ -67,8 +67,14 @@ class TaskServiceTest {
         // Arrange
         Task anotherTask = new Task("Another Task", "Another Description", LocalDateTime.now().plusDays(2), userId);
         anotherTask.setId(UUID.randomUUID());
-        List<Task> tasks = Arrays.asList(testTask, anotherTask);
-        when(taskRepository.findByUserId(userId)).thenReturn(tasks);
+        
+        taskRepository.save(testTask);
+        taskRepository.save(anotherTask);
+        
+        // Добавляем задачу другого пользователя, которая не должна быть возвращена
+        UUID anotherUserId = UUID.randomUUID();
+        Task otherUserTask = new Task("Other User Task", "Other Description", LocalDateTime.now().plusDays(1), anotherUserId);
+        taskRepository.save(otherUserTask);
 
         // Act
         List<Task> result = taskService.findAllByUserId(userId);
@@ -76,30 +82,38 @@ class TaskServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(taskRepository, times(1)).findByUserId(userId);
+        assertTrue(result.stream().anyMatch(t -> t.getTitle().equals(testTask.getTitle())));
+        assertTrue(result.stream().anyMatch(t -> t.getTitle().equals(anotherTask.getTitle())));
+        assertFalse(result.stream().anyMatch(t -> t.getTitle().equals(otherUserTask.getTitle())));
     }
 
     @Test
     void findPendingByUserId_ShouldReturnPendingTasks() {
         // Arrange
-        Task pendingTask = new Task("Pending Task", "Pending Description", LocalDateTime.now().plusDays(3), userId);
-        pendingTask.setId(UUID.randomUUID());
-        List<Task> pendingTasks = Arrays.asList(testTask, pendingTask);
-        when(taskRepository.findPendingByUserId(userId)).thenReturn(pendingTasks);
+        taskRepository.save(testTask);
+        
+        // Создаем задачу в прошлом (которая не должна считаться ожидающей)
+        Task pastTask = new Task("Past Task", "Past Description", LocalDateTime.now().minusDays(1), userId);
+        taskRepository.save(pastTask);
+        
+        // Создаем удаленную задачу (которая не должна считаться ожидающей)
+        Task deletedTask = new Task("Deleted Task", "Deleted Description", LocalDateTime.now().plusDays(3), userId);
+        deletedTask.setDeleted(true);
+        taskRepository.save(deletedTask);
 
         // Act
         List<Task> result = taskService.findPendingByUserId(userId);
 
         // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(taskRepository, times(1)).findPendingByUserId(userId);
+        assertEquals(1, result.size());
+        assertEquals(testTask.getTitle(), result.get(0).getTitle());
     }
 
     @Test
     void findById_WhenTaskExists_ShouldReturnTask() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(testTask));
+        taskRepository.save(testTask);
 
         // Act
         Optional<Task> result = taskService.findById(taskId);
@@ -107,50 +121,52 @@ class TaskServiceTest {
         // Assert
         assertTrue(result.isPresent());
         assertEquals(testTask.getId(), result.get().getId());
-        verify(taskRepository, times(1)).findById(taskId);
     }
 
     @Test
     void findById_WhenTaskDoesNotExist_ShouldReturnEmpty() {
         // Arrange
         UUID nonExistentId = UUID.randomUUID();
-        when(taskRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
         // Act
         Optional<Task> result = taskService.findById(nonExistentId);
 
         // Assert
         assertFalse(result.isPresent());
-        verify(taskRepository, times(1)).findById(nonExistentId);
     }
 
     @Test
     void deleteTask_WhenTaskExists_ShouldMarkAsDeletedAndCreateNotification() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(testTask));
-        when(notificationService.createNotification(any(Notification.class))).thenReturn(new Notification());
+        taskRepository.save(testTask);
 
         // Act
         taskService.deleteTask(taskId);
 
         // Assert
-        verify(taskRepository, times(1)).findById(taskId);
-        verify(taskRepository, times(1)).delete(taskId);
-        verify(notificationService, times(1)).createNotification(any(Notification.class));
+        Optional<Task> foundTask = taskRepository.findById(taskId);
+        assertTrue(foundTask.isPresent());
+        assertTrue(foundTask.get().isDeleted());
+        
+        // Проверяем, что было создано уведомление о удалении
+        List<Notification> notifications = notificationService.findAllByUserId(userId);
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).getMessage().contains("удалена"));
     }
 
     @Test
     void deleteTask_WhenTaskDoesNotExist_ShouldDoNothing() {
         // Arrange
         UUID nonExistentId = UUID.randomUUID();
-        when(taskRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
         // Act
         taskService.deleteTask(nonExistentId);
 
         // Assert
-        verify(taskRepository, times(1)).findById(nonExistentId);
-        verify(taskRepository, never()).delete(any(UUID.class));
-        verify(notificationService, never()).createNotification(any(Notification.class));
+        // Никаких ошибок быть не должно, сервис должен просто ничего не сделать
+        
+        // Проверяем, что уведомление не было создано
+        List<Notification> notifications = notificationService.findAllByUserId(userId);
+        assertTrue(notifications.isEmpty());
     }
 } 
