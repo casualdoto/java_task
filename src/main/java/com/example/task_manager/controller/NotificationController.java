@@ -2,7 +2,6 @@ package com.example.task_manager.controller;
 
 import com.example.task_manager.model.Notification;
 import com.example.task_manager.service.NotificationService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
