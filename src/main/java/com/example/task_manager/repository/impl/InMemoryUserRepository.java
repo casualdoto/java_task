@@ -9,13 +9,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-@Profile("dev")
+@Profile("inmemory")
 public class InMemoryUserRepository implements UserRepository {
     private final Map<UUID, User> users = new ConcurrentHashMap<>();
+    private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();
 
     @Override
     public User save(User entity) {
         users.put(entity.getId(), entity);
+        usersByUsername.put(entity.getUsername(), entity);
         return entity;
     }
 
@@ -31,13 +33,14 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public void delete(UUID id) {
-        users.remove(id);
+        Optional.ofNullable(users.get(id)).ifPresent(user -> {
+            usersByUsername.remove(user.getUsername());
+            users.remove(id);
+        });
     }
 
     @Override
     public Optional<User> findByUsername(String username) {
-        return users.values().stream()
-                .filter(user -> user.getUsername().equals(username))
-                .findFirst();
+        return Optional.ofNullable(usersByUsername.get(username));
     }
 } 

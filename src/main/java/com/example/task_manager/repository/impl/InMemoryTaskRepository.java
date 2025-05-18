@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Repository
-@Profile("dev")
+@Profile("inmemory")
 public class InMemoryTaskRepository implements TaskRepository {
     private final Map<UUID, Task> tasks = new ConcurrentHashMap<>();
 
@@ -40,12 +40,26 @@ public class InMemoryTaskRepository implements TaskRepository {
     }
 
     @Override
-    public List<Task> findByUserId(UUID userId) {
+    public List<Task> findByUserIdAndDeletedFalse(UUID userId) {
         return tasks.values().stream()
                 .filter(task -> task.getUserId().equals(userId) && !task.isDeleted())
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Task> findAllByDeletedFalse() {
+        return tasks.values().stream()
+                .filter(task -> !task.isDeleted())
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<Task> findByUserId(UUID userId) {
+        return tasks.values().stream()
+                .filter(task -> task.getUserId().equals(userId))
+                .collect(Collectors.toList());
+    }
+    
     @Override
     public List<Task> findPendingByUserId(UUID userId) {
         LocalDateTime now = LocalDateTime.now();

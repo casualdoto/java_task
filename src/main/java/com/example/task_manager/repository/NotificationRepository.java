@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NotificationRepository extends Repository<Notification> {
+    List<Notification> findByUserIdAndReadFalse(UUID userId);
     List<Notification> findByUserId(UUID userId);
     List<Notification> findPendingByUserId(UUID userId);
 } 

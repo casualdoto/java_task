@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Repository
-@Profile("dev")
+@Profile("inmemory")
 public class InMemoryNotificationRepository implements NotificationRepository {
     private final Map<UUID, Notification> notifications = new ConcurrentHashMap<>();
 
@@ -39,6 +39,13 @@ public class InMemoryNotificationRepository implements NotificationRepository {
     public List<Notification> findByUserId(UUID userId) {
         return notifications.values().stream()
                 .filter(notification -> notification.getUserId().equals(userId))
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<Notification> findByUserIdAndReadFalse(UUID userId) {
+        return notifications.values().stream()
+                .filter(notification -> notification.getUserId().equals(userId) && !notification.isRead())
                 .collect(Collectors.toList());
     }
 
