@@ -10,8 +10,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Repository
 @Profile("jpa")
@@ -26,13 +28,11 @@ public interface JpaTaskRepository extends JpaRepository<Task, UUID>, TaskReposi
     
     @Override
     default List<Task> findPendingByUserId(UUID userId) {
-        return findByUserIdAndDeletedFalse(userId);
+        LocalDateTime now = LocalDateTime.now();
+        return findByUserIdAndDeletedFalse(userId).stream()
+                .filter(task -> task.getTargetDate().isAfter(now))
+                .collect(Collectors.toList());
     }
-    
-    @Transactional
-    @Modifying
-    @Query("UPDATE Task t SET t.deleted = true WHERE t.id = :id")
-    void softDeleteById(@Param("id") UUID id);
     
     @Override
     @Transactional

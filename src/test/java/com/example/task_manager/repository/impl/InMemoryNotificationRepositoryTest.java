@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -155,5 +156,104 @@ class InMemoryNotificationRepositoryTest {
         List<T> list = new ArrayList<>();
         iterable.forEach(list::add);
         return list;
+    }
+    
+    @Test
+    void findByUserIdAndReadFalse_ShouldReturnUnreadUserNotifications() {
+        // Arrange
+        notificationRepository.save(testNotification); // не прочитано по умолчанию
+        
+        // Создаем прочитанное уведомление
+        Notification readNotification = new Notification("Read Notification", userId);
+        readNotification.setRead(true);
+        notificationRepository.save(readNotification);
+        
+        // Создаем уведомление для другого пользователя
+        UUID anotherUserId = UUID.randomUUID();
+        Notification anotherUserNotification = new Notification("Another User Notification", anotherUserId);
+        notificationRepository.save(anotherUserNotification);
+        
+        // Act
+        List<Notification> unreadUserNotifications = notificationRepository.findByUserIdAndReadFalse(userId);
+        
+        // Assert
+        assertEquals(1, unreadUserNotifications.size());
+        assertEquals(testNotification.getId(), unreadUserNotifications.get(0).getId());
+        assertFalse(unreadUserNotifications.get(0).isRead());
+    }
+    
+    @Test
+    void deleteAllById_ShouldRemoveSpecifiedNotifications() {
+        // Arrange
+        notificationRepository.save(testNotification);
+        Notification anotherNotification = new Notification("Another Notification", userId);
+        notificationRepository.save(anotherNotification);
+        Notification thirdNotification = new Notification("Third Notification", userId);
+        notificationRepository.save(thirdNotification);
+        
+        List<UUID> idsToDelete = Arrays.asList(testNotification.getId(), anotherNotification.getId());
+        
+        // Act
+        notificationRepository.deleteAllById(idsToDelete);
+        
+        // Assert
+        assertFalse(notificationRepository.findById(testNotification.getId()).isPresent());
+        assertFalse(notificationRepository.findById(anotherNotification.getId()).isPresent());
+        assertTrue(notificationRepository.findById(thirdNotification.getId()).isPresent());
+    }
+    
+    @Test
+    void deleteAll_Iterable_ShouldRemoveSpecifiedNotifications() {
+        // Arrange
+        notificationRepository.save(testNotification);
+        Notification anotherNotification = new Notification("Another Notification", userId);
+        notificationRepository.save(anotherNotification);
+        Notification thirdNotification = new Notification("Third Notification", userId);
+        notificationRepository.save(thirdNotification);
+        
+        List<Notification> notificationsToDelete = Arrays.asList(testNotification, anotherNotification);
+        
+        // Act
+        notificationRepository.deleteAll(notificationsToDelete);
+        
+        // Assert
+        assertFalse(notificationRepository.findById(testNotification.getId()).isPresent());
+        assertFalse(notificationRepository.findById(anotherNotification.getId()).isPresent());
+        assertTrue(notificationRepository.findById(thirdNotification.getId()).isPresent());
+    }
+    
+    @Test
+    void deleteAll_ShouldRemoveAllNotifications() {
+        // Arrange
+        notificationRepository.save(testNotification);
+        Notification anotherNotification = new Notification("Another Notification", userId);
+        notificationRepository.save(anotherNotification);
+        
+        // Act
+        notificationRepository.deleteAll();
+        
+        // Assert
+        Iterable<Notification> remainingNotifications = notificationRepository.findAll();
+        List<Notification> notificationsList = convertToList(remainingNotifications);
+        assertTrue(notificationsList.isEmpty());
+    }
+    
+    @Test
+    void saveAll_ShouldSaveMultipleNotifications() {
+        // Arrange
+        Notification anotherNotification = new Notification("Another Notification", userId);
+        List<Notification> notificationsToSave = Arrays.asList(testNotification, anotherNotification);
+        
+        // Act
+        Iterable<Notification> savedNotifications = notificationRepository.saveAll(notificationsToSave);
+        List<Notification> savedList = convertToList(savedNotifications);
+        
+        // Assert
+        assertEquals(2, savedList.size());
+        
+        // Проверяем, что уведомления действительно сохранены
+        Iterable<Notification> allNotifications = notificationRepository.findAll();
+        List<Notification> allList = convertToList(allNotifications);
+        assertEquals(2, allList.size());
     }
 } 

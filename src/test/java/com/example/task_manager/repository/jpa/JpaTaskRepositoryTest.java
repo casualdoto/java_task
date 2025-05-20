@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,9 @@ class JpaTaskRepositoryTest {
     
     @Autowired
     private JpaUserRepository userRepository;
+    
+    @Autowired
+    private EntityManager entityManager;
     
     private User testUser;
     
@@ -107,10 +111,56 @@ class JpaTaskRepositoryTest {
         
         // Act
         taskRepository.deleteById(savedTask.getId());
-        Optional<Task> foundTask = taskRepository.findById(savedTask.getId());
+        
+        // Чтобы проверить, что задача помечена как удаленная, нужно получить ее заново
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Получаем задачу из базы напрямую, минуя кэш
+        Task taskAfterDelete = entityManager.find(Task.class, savedTask.getId());
         
         // Assert
-        assertTrue(foundTask.isPresent());
-        assertTrue(foundTask.get().isDeleted());
+        assertNotNull(taskAfterDelete);
+        assertTrue(taskAfterDelete.isDeleted());
+    }
+    
+    @Test
+    void findByUserId_ShouldReturnOnlyUserTasksNotDeleted() {
+        // Arrange
+        Task task1 = new Task("Task 1", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        Task task2 = new Task("Task 2", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        Task deletedTask = new Task("Deleted Task", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        deletedTask.setDeleted(true);
+        
+        taskRepository.save(task1);
+        taskRepository.save(task2);
+        taskRepository.save(deletedTask);
+        
+        // Act
+        List<Task> tasks = taskRepository.findByUserId(testUser.getId());
+        
+        // Assert
+        assertEquals(2, tasks.size());
+        assertTrue(tasks.stream().noneMatch(Task::isDeleted));
+    }
+    
+    @Test
+    void findPendingByUserId_ShouldReturnOnlyUserTasksNotDeleted() {
+        // Arrange
+        Task task1 = new Task("Task 1", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        Task task2 = new Task("Task 2", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        Task deletedTask = new Task("Deleted Task", "Description", LocalDateTime.now().plusDays(1), testUser.getId());
+        deletedTask.setDeleted(true);
+        
+        taskRepository.save(task1);
+        taskRepository.save(task2);
+        taskRepository.save(deletedTask);
+        
+        // Act
+        List<Task> tasks = taskRepository.findPendingByUserId(testUser.getId());
+        
+        // Assert
+        assertEquals(2, tasks.size());
+        assertTrue(tasks.stream().noneMatch(Task::isDeleted));
     }
 } 

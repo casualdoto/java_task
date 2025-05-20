@@ -109,6 +109,7 @@ public class InMemoryTaskRepository implements TaskRepository {
     
     @Override
     public List<Task> findPendingByUserId(UUID userId) {
+        // Находим все задачи пользователя, которые не удалены и срок выполнения которых еще не истек
         LocalDateTime now = LocalDateTime.now();
         return tasks.values().stream()
                 .filter(task -> task.getUserId().equals(userId) 
