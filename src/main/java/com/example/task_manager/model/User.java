@@ -3,17 +3,13 @@ package com.example.task_manager.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 public class User {
     @Id
     private UUID id;
@@ -33,6 +29,10 @@ public class User {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
+    }
+
+    public User() {
+        this.id = UUID.randomUUID();
     }
 
     public User(String username, String password) {

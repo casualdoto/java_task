@@ -4,6 +4,7 @@ import com.example.task_manager.model.Notification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,7 +62,8 @@ class InMemoryNotificationRepositoryTest {
     @Test
     void findAll_WhenNoNotifications_ShouldReturnEmptyList() {
         // Act
-        List<Notification> notifications = notificationRepository.findAll();
+        Iterable<Notification> notificationsIterable = notificationRepository.findAll();
+        List<Notification> notifications = convertToList(notificationsIterable);
 
         // Assert
         assertNotNull(notifications);
@@ -76,7 +78,8 @@ class InMemoryNotificationRepositoryTest {
         notificationRepository.save(anotherNotification);
 
         // Act
-        List<Notification> notifications = notificationRepository.findAll();
+        Iterable<Notification> notificationsIterable = notificationRepository.findAll();
+        List<Notification> notifications = convertToList(notificationsIterable);
 
         // Assert
         assertNotNull(notifications);
@@ -89,7 +92,7 @@ class InMemoryNotificationRepositoryTest {
         notificationRepository.save(testNotification);
 
         // Act
-        notificationRepository.delete(notificationId);
+        notificationRepository.deleteById(notificationId);
         Optional<Notification> deletedNotification = notificationRepository.findById(notificationId);
 
         // Assert
@@ -102,7 +105,7 @@ class InMemoryNotificationRepositoryTest {
         UUID nonExistentId = UUID.randomUUID();
 
         // Act & Assert
-        assertDoesNotThrow(() -> notificationRepository.delete(nonExistentId));
+        assertDoesNotThrow(() -> notificationRepository.deleteById(nonExistentId));
     }
 
     @Test
@@ -146,5 +149,11 @@ class InMemoryNotificationRepositoryTest {
         assertEquals(1, pendingNotifications.size());
         assertEquals(testNotification.getId(), pendingNotifications.get(0).getId());
         assertFalse(pendingNotifications.get(0).isRead());
+    }
+    
+    private <T> List<T> convertToList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
     }
 } 

@@ -12,13 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("inmemory")
 public class InMemoryUserRepository implements UserRepository {
     private final Map<UUID, User> users = new ConcurrentHashMap<>();
-    private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();
 
     @Override
-    public User save(User entity) {
+    public <S extends User> S save(S entity) {
         users.put(entity.getId(), entity);
-        usersByUsername.put(entity.getUsername(), entity);
         return entity;
+    }
+
+    @Override
+    public <S extends User> Iterable<S> saveAll(Iterable<S> entities) {
+        entities.forEach(entity -> users.put(entity.getId(), entity));
+        return entities;
     }
 
     @Override
@@ -27,20 +31,60 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> findAll() {
+    public boolean existsById(UUID id) {
+        return users.containsKey(id);
+    }
+
+    @Override
+    public Iterable<User> findAll() {
         return new ArrayList<>(users.values());
     }
 
     @Override
-    public void delete(UUID id) {
-        Optional.ofNullable(users.get(id)).ifPresent(user -> {
-            usersByUsername.remove(user.getUsername());
-            users.remove(id);
+    public Iterable<User> findAllById(Iterable<UUID> ids) {
+        List<User> result = new ArrayList<>();
+        ids.forEach(id -> {
+            if (users.containsKey(id)) {
+                result.add(users.get(id));
+            }
         });
+        return result;
+    }
+
+    @Override
+    public long count() {
+        return users.size();
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        users.remove(id);
+    }
+
+    @Override
+    public void delete(User entity) {
+        users.remove(entity.getId());
+    }
+
+    @Override
+    public void deleteAllById(Iterable<? extends UUID> ids) {
+        ids.forEach(users::remove);
+    }
+
+    @Override
+    public void deleteAll(Iterable<? extends User> entities) {
+        entities.forEach(entity -> users.remove(entity.getId()));
+    }
+
+    @Override
+    public void deleteAll() {
+        users.clear();
     }
 
     @Override
     public Optional<User> findByUsername(String username) {
-        return Optional.ofNullable(usersByUsername.get(username));
+        return users.values().stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst();
     }
 } 

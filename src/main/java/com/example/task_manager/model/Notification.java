@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @Table(name = "notifications")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Notification {
     @Id
     private UUID id;
@@ -46,6 +44,12 @@ public class Notification {
         if (this.read == false) {
             this.read = false;
         }
+    }
+    
+    public Notification() {
+        this.id = UUID.randomUUID();
+        this.creationDate = LocalDateTime.now();
+        this.read = false;
     }
 
     public Notification(String message, UUID userId) {

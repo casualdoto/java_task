@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface TaskRepository extends Repository<Task> {
     List<Task> findByUserIdAndDeletedFalse(UUID userId);
     List<Task> findAllByDeletedFalse();
+    List<Task> findByUserId(UUID userId);
+    List<Task> findPendingByUserId(UUID userId);
 } 

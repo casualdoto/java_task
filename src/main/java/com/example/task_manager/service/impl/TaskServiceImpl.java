@@ -52,7 +52,7 @@ public class TaskServiceImpl implements TaskService {
     public void deleteTask(UUID id) {
         Optional<Task> task = taskRepository.findById(id);
         if (task.isPresent()) {
-            taskRepository.delete(id);
+            taskRepository.deleteById(id);
             
             // Создаем уведомление об удалении задачи
             Notification notification = new Notification(

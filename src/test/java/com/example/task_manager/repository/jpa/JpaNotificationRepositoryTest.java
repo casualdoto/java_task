@@ -34,7 +34,7 @@ class JpaNotificationRepositoryTest {
     @Test
     void save_ShouldSaveAndReturnNotification() {
         // Arrange
-        Notification notification = new Notification("Test message", testUser.getId());
+        Notification notification = new Notification("Test Notification", testUser.getId());
         
         // Act
         Notification savedNotification = notificationRepository.save(notification);
@@ -42,13 +42,13 @@ class JpaNotificationRepositoryTest {
         // Assert
         assertNotNull(savedNotification);
         assertNotNull(savedNotification.getId());
-        assertEquals("Test message", savedNotification.getMessage());
+        assertEquals("Test Notification", savedNotification.getMessage());
     }
     
     @Test
     void findById_WhenNotificationExists_ShouldReturnNotification() {
         // Arrange
-        Notification notification = new Notification("Test message", testUser.getId());
+        Notification notification = new Notification("Test Notification", testUser.getId());
         Notification savedNotification = notificationRepository.save(notification);
         
         // Act
@@ -56,21 +56,19 @@ class JpaNotificationRepositoryTest {
         
         // Assert
         assertTrue(foundNotification.isPresent());
-        assertEquals("Test message", foundNotification.get().getMessage());
+        assertEquals("Test Notification", foundNotification.get().getMessage());
     }
     
     @Test
     void findByUserId_ShouldReturnAllUserNotifications() {
         // Arrange
-        Notification notification1 = new Notification("Message 1", testUser.getId());
-        Notification notification2 = new Notification("Message 2", testUser.getId());
-        
-        User anotherUser = userRepository.save(new User("another", "password"));
-        Notification anotherUserNotification = new Notification("Another user message", anotherUser.getId());
+        Notification notification1 = new Notification("Notification 1", testUser.getId());
+        Notification notification2 = new Notification("Notification 2", testUser.getId());
+        Notification otherUserNotification = new Notification("Other User Notification", UUID.randomUUID());
         
         notificationRepository.save(notification1);
         notificationRepository.save(notification2);
-        notificationRepository.save(anotherUserNotification);
+        notificationRepository.save(otherUserNotification);
         
         // Act
         List<Notification> notifications = notificationRepository.findByUserId(testUser.getId());
@@ -83,9 +81,9 @@ class JpaNotificationRepositoryTest {
     @Test
     void findByUserIdAndReadFalse_ShouldReturnAllUnreadUserNotifications() {
         // Arrange
-        Notification unreadNotification1 = new Notification("Unread 1", testUser.getId());
-        Notification unreadNotification2 = new Notification("Unread 2", testUser.getId());
-        Notification readNotification = new Notification("Read", testUser.getId());
+        Notification unreadNotification1 = new Notification("Unread Notification 1", testUser.getId());
+        Notification unreadNotification2 = new Notification("Unread Notification 2", testUser.getId());
+        Notification readNotification = new Notification("Read Notification", testUser.getId());
         readNotification.setRead(true);
         
         notificationRepository.save(unreadNotification1);
@@ -93,19 +91,19 @@ class JpaNotificationRepositoryTest {
         notificationRepository.save(readNotification);
         
         // Act
-        List<Notification> unreadNotifications = notificationRepository.findByUserIdAndReadFalse(testUser.getId());
+        List<Notification> notifications = notificationRepository.findByUserIdAndReadFalse(testUser.getId());
         
         // Assert
-        assertEquals(2, unreadNotifications.size());
-        assertTrue(unreadNotifications.stream().noneMatch(Notification::isRead));
+        assertEquals(2, notifications.size());
+        assertTrue(notifications.stream().noneMatch(Notification::isRead));
     }
     
     @Test
     void findPendingByUserId_ShouldReturnAllUnreadUserNotifications() {
         // Arrange
-        Notification unreadNotification1 = new Notification("Unread 1", testUser.getId());
-        Notification unreadNotification2 = new Notification("Unread 2", testUser.getId());
-        Notification readNotification = new Notification("Read", testUser.getId());
+        Notification unreadNotification1 = new Notification("Unread Notification 1", testUser.getId());
+        Notification unreadNotification2 = new Notification("Unread Notification 2", testUser.getId());
+        Notification readNotification = new Notification("Read Notification", testUser.getId());
         readNotification.setRead(true);
         
         notificationRepository.save(unreadNotification1);
@@ -113,25 +111,24 @@ class JpaNotificationRepositoryTest {
         notificationRepository.save(readNotification);
         
         // Act
-        List<Notification> pendingNotifications = notificationRepository.findPendingByUserId(testUser.getId());
+        List<Notification> notifications = notificationRepository.findPendingByUserId(testUser.getId());
         
         // Assert
-        assertEquals(2, pendingNotifications.size());
-        assertTrue(pendingNotifications.stream().noneMatch(Notification::isRead));
+        assertEquals(2, notifications.size());
+        assertTrue(notifications.stream().noneMatch(Notification::isRead));
     }
     
     @Test
     void delete_ShouldRemoveNotification() {
         // Arrange
-        Notification notification = new Notification("Test message", testUser.getId());
+        Notification notification = new Notification("Test Notification", testUser.getId());
         Notification savedNotification = notificationRepository.save(notification);
-        UUID notificationId = savedNotification.getId();
         
         // Act
-        notificationRepository.delete(notificationId);
-        Optional<Notification> foundNotification = notificationRepository.findById(notificationId);
+        notificationRepository.deleteById(savedNotification.getId());
+        Optional<Notification> deletedNotification = notificationRepository.findById(savedNotification.getId());
         
         // Assert
-        assertFalse(foundNotification.isPresent());
+        assertFalse(deletedNotification.isPresent());
     }
 } 

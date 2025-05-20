@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -16,7 +15,6 @@ import java.util.UUID;
 @Table(name = "tasks")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Task {
     @Id
     private UUID id;
@@ -56,6 +54,12 @@ public class Task {
         if (this.deleted == false) {
             this.deleted = false;
         }
+    }
+    
+    public Task() {
+        this.id = UUID.randomUUID();
+        this.creationDate = LocalDateTime.now();
+        this.deleted = false;
     }
 
     public Task(String title, String description, LocalDateTime targetDate, UUID userId) {

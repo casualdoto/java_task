@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,7 +63,8 @@ class InMemoryTaskRepositoryTest {
     @Test
     void findAll_WhenNoTasks_ShouldReturnEmptyList() {
         // Act
-        List<Task> tasks = taskRepository.findAll();
+        Iterable<Task> tasksIterable = taskRepository.findAll();
+        List<Task> tasks = convertToList(tasksIterable);
 
         // Assert
         assertNotNull(tasks);
@@ -77,7 +79,8 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(anotherTask);
 
         // Act
-        List<Task> tasks = taskRepository.findAll();
+        Iterable<Task> tasksIterable = taskRepository.findAll();
+        List<Task> tasks = convertToList(tasksIterable);
 
         // Assert
         assertNotNull(tasks);
@@ -90,7 +93,7 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(testTask);
 
         // Act
-        taskRepository.delete(taskId);
+        taskRepository.deleteById(taskId);
         Optional<Task> deletedTask = taskRepository.findById(taskId);
 
         // Assert
@@ -104,7 +107,7 @@ class InMemoryTaskRepositoryTest {
         UUID nonExistentId = UUID.randomUUID();
 
         // Act & Assert
-        assertDoesNotThrow(() -> taskRepository.delete(nonExistentId));
+        assertDoesNotThrow(() -> taskRepository.deleteById(nonExistentId));
     }
 
     @Test
@@ -136,7 +139,7 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(testTask);
         Task deletedTask = new Task("Deleted Task", "Deleted Description", LocalDateTime.now().plusDays(2), userId);
         taskRepository.save(deletedTask);
-        taskRepository.delete(deletedTask.getId());
+        taskRepository.deleteById(deletedTask.getId());
 
         // Act
         List<Task> userTasks = taskRepository.findByUserId(userId);
@@ -172,7 +175,7 @@ class InMemoryTaskRepositoryTest {
         
         Task deletedTask = new Task("Deleted Task", "Deleted Description", LocalDateTime.now().plusDays(2), userId);
         taskRepository.save(deletedTask);
-        taskRepository.delete(deletedTask.getId());
+        taskRepository.deleteById(deletedTask.getId());
 
         // Act
         List<Task> pendingTasks = taskRepository.findPendingByUserId(userId);
@@ -181,5 +184,11 @@ class InMemoryTaskRepositoryTest {
         assertNotNull(pendingTasks);
         assertEquals(1, pendingTasks.size());
         assertEquals(testTask.getId(), pendingTasks.get(0).getId());
+    }
+    
+    private <T> List<T> convertToList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
     }
 } 

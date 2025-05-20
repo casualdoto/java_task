@@ -64,11 +64,14 @@ class JpaUserRepositoryTest {
     @Test
     void findAll_ShouldReturnAllUsers() {
         // Arrange
-        userRepository.save(new User("user1", "password"));
-        userRepository.save(new User("user2", "password"));
+        User user1 = new User("user1", "password");
+        User user2 = new User("user2", "password");
+        
+        userRepository.save(user1);
+        userRepository.save(user2);
         
         // Act
-        List<User> users = userRepository.findAll();
+        List<User> users = (List<User>) userRepository.findAll();
         
         // Assert
         assertEquals(2, users.size());
@@ -79,13 +82,12 @@ class JpaUserRepositoryTest {
         // Arrange
         User user = new User("testuser", "password");
         User savedUser = userRepository.save(user);
-        UUID userId = savedUser.getId();
         
         // Act
-        userRepository.delete(userId);
-        Optional<User> foundUser = userRepository.findById(userId);
+        userRepository.deleteById(savedUser.getId());
+        Optional<User> deletedUser = userRepository.findById(savedUser.getId());
         
         // Assert
-        assertFalse(foundUser.isPresent());
+        assertFalse(deletedUser.isPresent());
     }
 } 

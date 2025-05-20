@@ -107,7 +107,7 @@ class JpaTaskRepositoryTest {
         Task savedTask = taskRepository.save(task);
         
         // Act
-        taskRepository.delete(savedTask.getId());
+        taskRepository.deleteById(savedTask.getId());
         Optional<Task> foundTask = taskRepository.findById(savedTask.getId());
         
         // Assert

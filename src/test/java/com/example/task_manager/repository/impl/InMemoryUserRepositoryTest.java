@@ -4,6 +4,7 @@ import com.example.task_manager.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,7 +60,8 @@ class InMemoryUserRepositoryTest {
     @Test
     void findAll_WhenNoUsers_ShouldReturnEmptyList() {
         // Act
-        List<User> users = userRepository.findAll();
+        Iterable<User> usersIterable = userRepository.findAll();
+        List<User> users = convertToList(usersIterable);
 
         // Assert
         assertNotNull(users);
@@ -74,7 +76,8 @@ class InMemoryUserRepositoryTest {
         userRepository.save(anotherUser);
 
         // Act
-        List<User> users = userRepository.findAll();
+        Iterable<User> usersIterable = userRepository.findAll();
+        List<User> users = convertToList(usersIterable);
 
         // Assert
         assertNotNull(users);
@@ -87,7 +90,7 @@ class InMemoryUserRepositoryTest {
         userRepository.save(testUser);
 
         // Act
-        userRepository.delete(userId);
+        userRepository.deleteById(userId);
         Optional<User> deletedUser = userRepository.findById(userId);
 
         // Assert
@@ -100,7 +103,7 @@ class InMemoryUserRepositoryTest {
         UUID nonExistentId = UUID.randomUUID();
 
         // Act & Assert
-        assertDoesNotThrow(() -> userRepository.delete(nonExistentId));
+        assertDoesNotThrow(() -> userRepository.deleteById(nonExistentId));
     }
 
     @Test
@@ -123,5 +126,11 @@ class InMemoryUserRepositoryTest {
 
         // Assert
         assertFalse(foundUser.isPresent());
+    }
+    
+    private <T> List<T> convertToList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
     }
 } 
