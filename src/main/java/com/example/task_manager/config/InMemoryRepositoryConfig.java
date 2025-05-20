@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("inmemory")
+@Profile("dev")
 public class InMemoryRepositoryConfig {
 
     @Bean

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Repository
-@Profile("inmemory")
+@Profile("dev")
 public class InMemoryTaskRepository implements TaskRepository {
     private final Map<UUID, Task> tasks = new ConcurrentHashMap<>();
 

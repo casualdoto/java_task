@@ -16,7 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
-@Profile("jpa")
+@Profile("prod")
 public interface JpaTaskRepository extends JpaRepository<Task, UUID>, TaskRepository {
     List<Task> findByUserIdAndDeletedFalse(UUID userId);
     List<Task> findAllByDeletedFalse();

@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Repository
-@Profile("inmemory")
+@Profile("dev")
 public class InMemoryNotificationRepository implements NotificationRepository {
     private final Map<UUID, Notification> notifications = new ConcurrentHashMap<>();
 

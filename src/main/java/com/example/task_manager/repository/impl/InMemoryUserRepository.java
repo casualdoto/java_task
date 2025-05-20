@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-@Profile("inmemory")
+@Profile("dev")
 public class InMemoryUserRepository implements UserRepository {
     private final Map<UUID, User> users = new ConcurrentHashMap<>();
 

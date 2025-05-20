@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-@Profile("jpa")
+@Profile("prod")
 public interface JpaUserRepository extends JpaRepository<User, UUID>, UserRepository {
     Optional<User> findByUsername(String username);
 } 

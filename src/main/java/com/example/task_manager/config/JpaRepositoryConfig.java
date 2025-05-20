@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
-@Profile("jpa")
+@Profile("prod")
 @EnableJpaRepositories(basePackages = "com.example.task_manager.repository.jpa")
 @EntityScan("com.example.task_manager.model")
 public class JpaRepositoryConfig {
