@@ -75,18 +75,23 @@ class TaskServiceTest {
         anotherTask.setId(UUID.randomUUID());
         
         List<Task> mockTasks = Arrays.asList(testTask, anotherTask);
-        when(taskRepository.findByUserIdAndDeletedFalse(userId)).thenReturn(mockTasks);
+        
+        // Мокируем метод findByUserId, который вызывается в TaskServiceImpl.findAllByUserId
+        when(taskRepository.findByUserId(userId)).thenReturn(mockTasks);
 
         // Act
         List<Task> result = taskService.findAllByUserId(userId);
 
         // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(t -> t.getTitle().equals(testTask.getTitle())));
-        assertTrue(result.stream().anyMatch(t -> t.getTitle().equals(anotherTask.getTitle())));
+        assertEquals(mockTasks.size(), result.size(), "Размер списка должен быть равен 2");
         
-        verify(taskRepository).findByUserIdAndDeletedFalse(userId);
+        // Проверяем, что в списке содержатся нужные задачи
+        assertTrue(result.contains(testTask), "Результат должен содержать testTask");
+        assertTrue(result.contains(anotherTask), "Результат должен содержать anotherTask");
+        
+        // Проверяем, что метод репозитория был вызван с правильным аргументом
+        verify(taskRepository).findByUserId(userId);
     }
 
     @Test
