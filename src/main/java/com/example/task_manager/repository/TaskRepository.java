@@ -10,4 +10,5 @@ public interface TaskRepository extends Repository<Task> {
     List<Task> findAllByDeletedFalse();
     List<Task> findByUserId(UUID userId);
     List<Task> findPendingByUserId(UUID userId);
+    List<Task> findOverdueTasks();
 } 

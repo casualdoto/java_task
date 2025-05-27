@@ -10,4 +10,5 @@ public interface NotificationService {
     List<Notification> findAllByUserId(UUID userId);
     List<Notification> findPendingByUserId(UUID userId);
     void markAsRead(UUID id);
+    void createNotificationsAsync(List<Notification> notifications);
 } 
