@@ -439,6 +439,21 @@ TaskService -> KafkaMessageProducer -> Kafka Topic -> KafkaMessageListener -> No
 ./mvnw clean test jacoco:report
 ```
 
+#### Запуск тестов через Docker
+
+Для запуска тестов в Docker-контейнере (изолированная среда):
+
+```bash
+# Запуск всех тестов в Docker
+docker run --rm -v ${PWD}:/workspace -w /workspace maven:3.9.9-eclipse-temurin-17 mvn clean test
+
+# Запуск тестов с генерацией отчета покрытия
+docker run --rm -v ${PWD}:/workspace -w /workspace maven:3.9.9-eclipse-temurin-17 mvn clean test jacoco:report
+
+# Запуск конкретного теста
+docker run --rm -v ${PWD}:/workspace -w /workspace maven:3.9.9-eclipse-temurin-17 mvn test -Dtest=ScheduledTaskServiceTest
+```
+
 #### Покрытие тестами
 
 Тесты Task 8 обеспечивают высокое покрытие новой функциональности:
