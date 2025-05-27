@@ -32,6 +32,9 @@ class TaskServiceTest {
     @Mock
     private NotificationService notificationService;
     
+    @Mock
+    private KafkaMessageProducer kafkaMessageProducer;
+    
     private TaskService taskService;
 
     private Task testTask;
@@ -40,7 +43,7 @@ class TaskServiceTest {
 
     @BeforeEach
     void setUp() {
-        taskService = new TaskServiceImpl(taskRepository, notificationService);
+        taskService = new TaskServiceImpl(taskRepository, notificationService, kafkaMessageProducer);
         
         taskId = UUID.randomUUID();
         userId = UUID.randomUUID();
@@ -49,7 +52,7 @@ class TaskServiceTest {
     }
 
     @Test
-    void createTask_ShouldSaveTaskAndCreateNotification() {
+    void createTask_ShouldSaveTaskAndPublishKafkaEvent() {
         // Arrange
         when(taskRepository.save(any(Task.class))).thenReturn(testTask);
         
@@ -64,8 +67,11 @@ class TaskServiceTest {
         // Проверяем, что задача сохранена в репозитории
         verify(taskRepository).save(any(Task.class));
         
-        // Проверяем, что уведомление создано
-        verify(notificationService).createNotification(any(Notification.class));
+        // Проверяем, что событие опубликовано в Kafka
+        verify(kafkaMessageProducer).publishTaskCreatedEvent(any());
+        
+        // Проверяем, что прямое создание уведомления НЕ вызывается
+        verifyNoInteractions(notificationService);
     }
 
     @Test
