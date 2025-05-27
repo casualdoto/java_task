@@ -41,16 +41,20 @@ public class ScheduledTaskService {
         LocalDateTime now = LocalDateTime.now();
         
         for (Task task : overdueTasks) {
-            TaskOverdueEvent event = new TaskOverdueEvent(
-                    task.getId(),
-                    task.getTitle(),
-                    task.getUserId(),
-                    task.getTargetDate(),
-                    now
-            );
-            
-            kafkaMessageProducer.publishTaskOverdueEvent(event);
-            log.debug("Отправлено событие о просроченной задаче: {}", task.getTitle());
+            try {
+                TaskOverdueEvent event = new TaskOverdueEvent(
+                        task.getId(),
+                        task.getTitle(),
+                        task.getUserId(),
+                        task.getTargetDate(),
+                        now
+                );
+                
+                kafkaMessageProducer.publishTaskOverdueEvent(event);
+                log.debug("Отправлено событие о просроченной задаче: {}", task.getTitle());
+            } catch (Exception e) {
+                log.error("Ошибка при обработке просроченной задачи: {}", task.getTitle(), e);
+            }
         }
         
         log.info("Завершена асинхронная обработка просроченных задач");

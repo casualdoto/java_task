@@ -44,6 +44,12 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Async("taskExecutor")
     public void createNotificationsAsync(List<Notification> notifications) {
+        if (notifications == null || notifications.isEmpty()) {
+            log.info("Асинхронное создание 0 уведомлений");
+            log.info("Завершено асинхронное создание уведомлений");
+            return;
+        }
+        
         log.info("Асинхронное создание {} уведомлений", notifications.size());
         
         for (Notification notification : notifications) {
