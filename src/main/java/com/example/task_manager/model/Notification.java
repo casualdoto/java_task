@@ -23,7 +23,7 @@ public class Notification {
     @Size(max = 500, message = "Текст уведомления не может быть длиннее 500 символов")
     private String message;
     
-    @Column(nullable = false)
+    @Column(name = "`read`", nullable = false)
     private boolean read;
     
     @Column(nullable = false)

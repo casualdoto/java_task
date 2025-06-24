@@ -10,11 +10,15 @@ import com.example.task_manager.service.impl.NotificationServiceImpl;
 import com.example.task_manager.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class NotificationServiceIntegrationTest {
 
     private UserService userService;

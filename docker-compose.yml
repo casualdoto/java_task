@@ -7,11 +7,23 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - mariadb
     volumes:
       - ./logs:/app/logs
-      - h2-data:/data
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:10.6
+    environment:
+      - MARIADB_ROOT_PASSWORD=password
+      - MARIADB_DATABASE=taskdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
     restart: unless-stopped
 
 volumes:
-  h2-data:
+  mariadb-data:
     driver: local 

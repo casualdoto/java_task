@@ -15,7 +15,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@ActiveProfiles("prod")
+@ActiveProfiles("test")
 class JpaNotificationRepositoryTest {
     
     @Autowired
@@ -64,7 +64,10 @@ class JpaNotificationRepositoryTest {
         // Arrange
         Notification notification1 = new Notification("Notification 1", testUser.getId());
         Notification notification2 = new Notification("Notification 2", testUser.getId());
-        Notification otherUserNotification = new Notification("Other User Notification", UUID.randomUUID());
+        
+        // Создаем другого пользователя для корректного тестирования
+        User otherUser = userRepository.save(new User("otheruser", "password"));
+        Notification otherUserNotification = new Notification("Other User Notification", otherUser.getId());
         
         notificationRepository.save(notification1);
         notificationRepository.save(notification2);

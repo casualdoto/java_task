@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-@Profile("prod")
+@Profile({"prod", "test"})
 public interface JpaNotificationRepository extends JpaRepository<Notification, UUID>, NotificationRepository {
     List<Notification> findByUserIdAndReadFalse(UUID userId);
     List<Notification> findByUserId(UUID userId);
