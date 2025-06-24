@@ -6,6 +6,7 @@ import com.example.task_manager.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +35,8 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public List<User> findAll() {
-        return userRepository.findAll();
+        List<User> result = new ArrayList<>();
+        userRepository.findAll().forEach(result::add);
+        return result;
     }
 } 
