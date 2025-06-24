@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.cursor
+target/
+logs/
+*.md
+!README.md
+.mvn/
+mvnw
+mvnw.cmd 
