@@ -9,6 +9,7 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
     depends_on:
       - mariadb
+      - redis
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
@@ -24,6 +25,16 @@ services:
       - mariadb-data:/var/lib/mysql
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
 volumes:
   mariadb-data:
+    driver: local
+  redis-data:
     driver: local 
