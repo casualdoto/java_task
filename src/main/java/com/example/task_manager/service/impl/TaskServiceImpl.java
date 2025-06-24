@@ -2,7 +2,9 @@ package com.example.task_manager.service.impl;
 
 import com.example.task_manager.model.Notification;
 import com.example.task_manager.model.Task;
+import com.example.task_manager.model.TaskCreatedEvent;
 import com.example.task_manager.repository.TaskRepository;
+import com.example.task_manager.service.KafkaMessageProducer;
 import com.example.task_manager.service.NotificationService;
 import com.example.task_manager.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +22,23 @@ public class TaskServiceImpl implements TaskService {
     
     private final TaskRepository taskRepository;
     private final NotificationService notificationService;
+    private final KafkaMessageProducer kafkaMessageProducer;
     
     @Override
     @CacheEvict(value = {"userTasks", "pendingTasks"}, key = "#task.userId")
     public Task createTask(Task task) {
         Task savedTask = taskRepository.save(task);
         
-        // Создаем уведомление о новой задаче
-        Notification notification = new Notification(
-                "Новая задача: " + task.getTitle(),
-                task.getUserId()
+        // Публикуем событие в Kafka вместо прямого создания уведомления
+        TaskCreatedEvent event = new TaskCreatedEvent(
+                savedTask.getId(),
+                savedTask.getTitle(),
+                savedTask.getDescription(),
+                savedTask.getUserId(),
+                savedTask.getCreationDate(),
+                savedTask.getTargetDate()
         );
-        notificationService.createNotification(notification);
+        kafkaMessageProducer.publishTaskCreatedEvent(event);
         
         return savedTask;
     }
@@ -61,7 +68,8 @@ public class TaskServiceImpl implements TaskService {
         if (task.isPresent()) {
             taskRepository.deleteById(id);
             
-            // Создаем уведомление об удалении задачи
+            // Для удаления пока оставляем прямое создание уведомления
+            // В будущем можно создать отдельное событие TaskDeletedEvent
             Notification notification = new Notification(
                     "Задача удалена: " + task.get().getTitle(),
                     task.get().getUserId()

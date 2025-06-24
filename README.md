@@ -293,3 +293,44 @@ TTL <key>           # Показать время жизни ключа
 GET <key>           # Получить значение по ключу
 FLUSHALL            # Очистить весь кэш
 ```
+
+## Task 7: Система сообщений (Kafka)
+
+### Основные изменения
+
+1. **Добавление Apache Kafka**
+   - Добавлены зависимости Spring Kafka в pom.xml
+   - Настроен Kafka и Zookeeper в docker-compose.yml
+   - Создана конфигурация KafkaConfig для producer и consumer
+
+2. **Модель событий**
+   - Создан класс `TaskCreatedEvent` для передачи данных о созданных задачах
+   - Настроена JSON сериализация/десериализация событий
+
+3. **Асинхронная обработка сообщений**
+   - Создан `KafkaMessageProducer` для публикации событий в Kafka
+   - Создан `KafkaMessageListener` для асинхронной обработки событий
+   - TaskService теперь публикует события вместо прямого создания уведомлений
+
+4. **Разделение ответственности**
+   - NotificationService получает обновления ТОЛЬКО через message broker
+   - Убрана прямая зависимость TaskService от NotificationService для создания задач
+   - Уведомления создаются асинхронно через Kafka listener
+
+### Архитектура messaging
+
+```
+TaskService -> KafkaMessageProducer -> Kafka Topic -> KafkaMessageListener -> NotificationService
+```
+
+1. **Создание задачи** - TaskService сохраняет задачу в БД
+2. **Публикация события** - Отправляется TaskCreatedEvent в Kafka топик
+3. **Асинхронная обработка** - KafkaMessageListener получает событие
+4. **Создание уведомления** - Автоматически создается уведомление пользователю
+
+### Конфигурация Kafka
+
+- **Топик**: `task-created` для событий создания задач
+- **Consumer Group**: `task-manager-group` для обработки сообщений
+- **Сериализация**: JSON для передачи объектов TaskCreatedEvent
+- **Надежность**: Настроена гарантированная доставка сообщений

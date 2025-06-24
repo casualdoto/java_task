@@ -7,6 +7,7 @@ import com.example.task_manager.repository.TaskRepository;
 import com.example.task_manager.repository.UserRepository;
 import com.example.task_manager.repository.impl.InMemoryTaskRepository;
 import com.example.task_manager.repository.impl.InMemoryUserRepository;
+import com.example.task_manager.service.KafkaMessageProducer;
 import com.example.task_manager.service.NotificationService;
 import com.example.task_manager.service.TaskService;
 import com.example.task_manager.service.UserService;
@@ -15,6 +16,7 @@ import com.example.task_manager.service.impl.TaskServiceImpl;
 import com.example.task_manager.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -31,6 +33,7 @@ class TaskServiceIntegrationTest {
     private UserService userService;
     private TaskService taskService;
     private NotificationService notificationService;
+    private KafkaMessageProducer kafkaMessageProducer;
 
     private UserRepository userRepository;
     private TaskRepository taskRepository;
@@ -45,10 +48,13 @@ class TaskServiceIntegrationTest {
         taskRepository = new InMemoryTaskRepository();
         var notificationRepository = new com.example.task_manager.repository.impl.InMemoryNotificationRepository();
 
+        // Создаем мок для KafkaMessageProducer
+        kafkaMessageProducer = Mockito.mock(KafkaMessageProducer.class);
+
         // Создаем сервисы
         userService = new UserServiceImpl(userRepository);
         notificationService = new NotificationServiceImpl(notificationRepository);
-        taskService = new TaskServiceImpl(taskRepository, notificationService);
+        taskService = new TaskServiceImpl(taskRepository, notificationService, kafkaMessageProducer);
 
         // Создаем тестового пользователя
         testUser = new User("testUser", "password123");
@@ -59,7 +65,7 @@ class TaskServiceIntegrationTest {
     }
 
     @Test
-    void createTask_ShouldSaveTaskAndCreateNotification() {
+    void createTask_ShouldSaveTaskAndPublishKafkaEvent() {
         // Act
         Task savedTask = taskService.createTask(testTask);
 
@@ -73,10 +79,11 @@ class TaskServiceIntegrationTest {
         assertTrue(foundTask.isPresent());
         assertEquals(savedTask.getId(), foundTask.get().getId());
 
-        // Проверяем, что уведомление было создано
-        List<Notification> notifications = notificationService.findAllByUserId(testUser.getId());
-        assertEquals(1, notifications.size());
-        assertTrue(notifications.get(0).getMessage().contains(testTask.getTitle()));
+        // Проверяем, что событие было опубликовано в Kafka
+        Mockito.verify(kafkaMessageProducer).publishTaskCreatedEvent(Mockito.any());
+        
+        // В интеграционном тесте уведомления создаются через Kafka listener,
+        // поэтому здесь мы не проверяем прямое создание уведомлений
     }
 
     @Test
