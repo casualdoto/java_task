@@ -1,12 +1,10 @@
 package com.example.task_manager.repository;
 
-import java.util.List;
-import java.util.Optional;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.NoRepositoryBean;
+
 import java.util.UUID;
 
-public interface Repository<T> {
-    T save(T entity);
-    Optional<T> findById(UUID id);
-    List<T> findAll();
-    void delete(UUID id);
+@NoRepositoryBean
+public interface Repository<T> extends CrudRepository<T, UUID> {
 } 

@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,7 +64,8 @@ class InMemoryTaskRepositoryTest {
     @Test
     void findAll_WhenNoTasks_ShouldReturnEmptyList() {
         // Act
-        List<Task> tasks = taskRepository.findAll();
+        Iterable<Task> tasksIterable = taskRepository.findAll();
+        List<Task> tasks = convertToList(tasksIterable);
 
         // Assert
         assertNotNull(tasks);
@@ -77,7 +80,8 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(anotherTask);
 
         // Act
-        List<Task> tasks = taskRepository.findAll();
+        Iterable<Task> tasksIterable = taskRepository.findAll();
+        List<Task> tasks = convertToList(tasksIterable);
 
         // Assert
         assertNotNull(tasks);
@@ -90,7 +94,7 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(testTask);
 
         // Act
-        taskRepository.delete(taskId);
+        taskRepository.deleteById(taskId);
         Optional<Task> deletedTask = taskRepository.findById(taskId);
 
         // Assert
@@ -104,7 +108,7 @@ class InMemoryTaskRepositoryTest {
         UUID nonExistentId = UUID.randomUUID();
 
         // Act & Assert
-        assertDoesNotThrow(() -> taskRepository.delete(nonExistentId));
+        assertDoesNotThrow(() -> taskRepository.deleteById(nonExistentId));
     }
 
     @Test
@@ -136,7 +140,7 @@ class InMemoryTaskRepositoryTest {
         taskRepository.save(testTask);
         Task deletedTask = new Task("Deleted Task", "Deleted Description", LocalDateTime.now().plusDays(2), userId);
         taskRepository.save(deletedTask);
-        taskRepository.delete(deletedTask.getId());
+        taskRepository.deleteById(deletedTask.getId());
 
         // Act
         List<Task> userTasks = taskRepository.findByUserId(userId);
@@ -172,7 +176,7 @@ class InMemoryTaskRepositoryTest {
         
         Task deletedTask = new Task("Deleted Task", "Deleted Description", LocalDateTime.now().plusDays(2), userId);
         taskRepository.save(deletedTask);
-        taskRepository.delete(deletedTask.getId());
+        taskRepository.deleteById(deletedTask.getId());
 
         // Act
         List<Task> pendingTasks = taskRepository.findPendingByUserId(userId);
@@ -181,5 +185,176 @@ class InMemoryTaskRepositoryTest {
         assertNotNull(pendingTasks);
         assertEquals(1, pendingTasks.size());
         assertEquals(testTask.getId(), pendingTasks.get(0).getId());
+    }
+    
+    @Test
+    void existsById_WhenTaskExists_ShouldReturnTrue() {
+        // Arrange
+        taskRepository.save(testTask);
+        
+        // Act
+        boolean exists = taskRepository.existsById(taskId);
+        
+        // Assert
+        assertTrue(exists);
+    }
+    
+    @Test
+    void existsById_WhenTaskDoesNotExist_ShouldReturnFalse() {
+        // Act
+        boolean exists = taskRepository.existsById(UUID.randomUUID());
+        
+        // Assert
+        assertFalse(exists);
+    }
+    
+    @Test
+    void count_ShouldReturnNumberOfTasks() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Another Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        
+        // Act
+        long count = taskRepository.count();
+        
+        // Assert
+        assertEquals(2, count);
+    }
+    
+    @Test
+    void deleteAll_ShouldRemoveAllTasks() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Another Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        
+        // Act
+        taskRepository.deleteAll();
+        
+        // Assert
+        assertEquals(0, convertToList(taskRepository.findAll()).size());
+    }
+    
+    @Test
+    void saveAll_ShouldSaveMultipleTasks() {
+        // Arrange
+        List<Task> tasksToSave = new ArrayList<>();
+        tasksToSave.add(testTask);
+        
+        Task anotherTask = new Task("Another Task", "Another Description", LocalDateTime.now().plusDays(2), userId);
+        tasksToSave.add(anotherTask);
+        
+        // Act
+        Iterable<Task> savedTasks = taskRepository.saveAll(tasksToSave);
+        List<Task> savedTasksList = convertToList(savedTasks);
+        
+        // Assert
+        assertEquals(2, savedTasksList.size());
+        assertEquals(2, convertToList(taskRepository.findAll()).size());
+    }
+    
+    private <T> List<T> convertToList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
+    }
+    
+    @Test
+    void findAllByDeletedFalse_ShouldReturnOnlyNonDeletedTasks() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        
+        Task deletedTask = new Task("Deleted Task", "Description", LocalDateTime.now().plusDays(3), userId);
+        taskRepository.save(deletedTask);
+        taskRepository.deleteById(deletedTask.getId());
+        
+        // Act
+        List<Task> nonDeletedTasks = taskRepository.findAllByDeletedFalse();
+        
+        // Assert
+        assertEquals(2, nonDeletedTasks.size());
+        for (Task task : nonDeletedTasks) {
+            assertFalse(task.isDeleted());
+        }
+    }
+    
+    @Test
+    void findByUserIdAndDeletedFalse_ShouldReturnOnlyUserNonDeletedTasks() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        
+        // Создаем задачу для другого пользователя
+        UUID anotherUserId = UUID.randomUUID();
+        Task anotherUserTask = new Task("Another User Task", "Description", LocalDateTime.now().plusDays(3), anotherUserId);
+        taskRepository.save(anotherUserTask);
+        
+        // Создаем и удаляем задачу текущего пользователя
+        Task deletedTask = new Task("Deleted Task", "Description", LocalDateTime.now().plusDays(3), userId);
+        taskRepository.save(deletedTask);
+        taskRepository.deleteById(deletedTask.getId());
+        
+        // Act
+        List<Task> userNonDeletedTasks = taskRepository.findByUserIdAndDeletedFalse(userId);
+        
+        // Assert
+        assertEquals(2, userNonDeletedTasks.size());
+        for (Task task : userNonDeletedTasks) {
+            assertEquals(userId, task.getUserId());
+            assertFalse(task.isDeleted());
+        }
+    }
+    
+    @Test
+    void deleteAllById_ShouldMarkMultipleTasksAsDeleted() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        
+        List<UUID> idsToDelete = Arrays.asList(testTask.getId(), anotherTask.getId());
+        
+        // Act
+        taskRepository.deleteAllById(idsToDelete);
+        
+        // Assert
+        Optional<Task> deletedTask1 = taskRepository.findById(testTask.getId());
+        Optional<Task> deletedTask2 = taskRepository.findById(anotherTask.getId());
+        
+        assertTrue(deletedTask1.isPresent());
+        assertTrue(deletedTask1.get().isDeleted());
+        assertTrue(deletedTask2.isPresent());
+        assertTrue(deletedTask2.get().isDeleted());
+    }
+    
+    @Test
+    void deleteAll_Iterable_ShouldMarkSpecifiedTasksAsDeleted() {
+        // Arrange
+        taskRepository.save(testTask);
+        Task anotherTask = new Task("Another Task", "Description", LocalDateTime.now().plusDays(2), userId);
+        taskRepository.save(anotherTask);
+        Task thirdTask = new Task("Third Task", "Description", LocalDateTime.now().plusDays(3), userId);
+        taskRepository.save(thirdTask);
+        
+        List<Task> tasksToDelete = Arrays.asList(testTask, anotherTask);
+        
+        // Act
+        taskRepository.deleteAll(tasksToDelete);
+        
+        // Assert
+        Optional<Task> deletedTask1 = taskRepository.findById(testTask.getId());
+        Optional<Task> deletedTask2 = taskRepository.findById(anotherTask.getId());
+        Optional<Task> nonDeletedTask = taskRepository.findById(thirdTask.getId());
+        
+        assertTrue(deletedTask1.isPresent());
+        assertTrue(deletedTask1.get().isDeleted());
+        assertTrue(deletedTask2.isPresent());
+        assertTrue(deletedTask2.get().isDeleted());
+        assertTrue(nonDeletedTask.isPresent());
+        assertFalse(nonDeletedTask.get().isDeleted());
     }
 } 
