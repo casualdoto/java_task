@@ -32,6 +32,14 @@ public interface JpaTaskRepository extends JpaRepository<Task, UUID>, TaskReposi
     }
     
     @Override
+    default List<Task> findOverdueTasks() {
+        LocalDateTime now = LocalDateTime.now();
+        return findAllByDeletedFalse().stream()
+                .filter(task -> task.getTargetDate().isBefore(now))
+                .collect(Collectors.toList());
+    }
+    
+    @Override
     @Transactional
     default void deleteById(UUID id) {
         Task task = findById(id).orElse(null);

@@ -117,4 +117,12 @@ public class InMemoryTaskRepository implements TaskRepository {
                         && task.getTargetDate().isAfter(now))
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    public List<Task> findOverdueTasks() {
+        LocalDateTime now = LocalDateTime.now();
+        return tasks.values().stream()
+                .filter(task -> !task.isDeleted() && task.getTargetDate().isBefore(now))
+                .collect(Collectors.toList());
+    }
 } 
